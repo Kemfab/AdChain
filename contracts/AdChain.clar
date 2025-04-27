@@ -43,6 +43,7 @@
 (define-constant MIN_COST_PER_VIEW u1)
 (define-constant MAX_COST_PER_VIEW u1000)
 (define-constant MIN_CAMPAIGN_BUDGET u1000)
+(define-constant MAX_CATEGORY_ID u1000)
 
 ;; Data variables
 (define-data-var contract-owner principal tx-sender)
@@ -67,6 +68,9 @@
   (begin
     (asserts! (is-eq tx-sender (var-get contract-owner)) ERR_NOT_AUTHORIZED)
     (asserts! (> (len category-name) u0) ERR_INVALID_PARAMS)
+    ;; Validate category ID
+    (asserts! (< category-id MAX_CATEGORY_ID) ERR_INVALID_PARAMS)
+    (asserts! (is-none (map-get? categories category-id)) ERR_ALREADY_REGISTERED)
     (ok (map-set categories category-id category-name))))
 
 ;; User functions
@@ -115,7 +119,7 @@
         active: true,
         category: category,
         total-views: u0,
-        created-at: block-height
+        created-at: u0
       })
       
       ;; Increment campaign ID
@@ -179,7 +183,7 @@
       (user-compensation (- cost-per-view platform-fee))
     )
       ;; Record the view
-      (map-set ad-views view-key {timestamp: block-height, compensated: true})
+      (map-set ad-views view-key {timestamp: u0, compensated: true})
       
       ;; Update campaign stats
       (map-set ad-campaigns campaign-id (merge campaign {
@@ -209,7 +213,7 @@
       ;; Update user profile
       (map-set user-profiles tx-sender (merge user-profile {
         earnings: u0,
-        last-payout: block-height
+        last-payout: u0
       }))
       
       (ok earnings))))
