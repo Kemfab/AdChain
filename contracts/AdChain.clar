@@ -143,6 +143,21 @@
     (ok (map-set ad-campaigns campaign-id 
       (merge campaign {budget: (+ (get budget campaign) additional-budget)})))))
 
+;; Helper function to check if a category is in user preferences
+(define-private (check-category-match (category uint) (preferences (list 10 uint)))
+  (or
+    (and (> (len preferences) u0) (is-eq category (unwrap-panic (element-at preferences u0))))
+    (and (> (len preferences) u1) (is-eq category (unwrap-panic (element-at preferences u1))))
+    (and (> (len preferences) u2) (is-eq category (unwrap-panic (element-at preferences u2))))
+    (and (> (len preferences) u3) (is-eq category (unwrap-panic (element-at preferences u3))))
+    (and (> (len preferences) u4) (is-eq category (unwrap-panic (element-at preferences u4))))
+    (and (> (len preferences) u5) (is-eq category (unwrap-panic (element-at preferences u5))))
+    (and (> (len preferences) u6) (is-eq category (unwrap-panic (element-at preferences u6))))
+    (and (> (len preferences) u7) (is-eq category (unwrap-panic (element-at preferences u7))))
+    (and (> (len preferences) u8) (is-eq category (unwrap-panic (element-at preferences u8))))
+    (and (> (len preferences) u9) (is-eq category (unwrap-panic (element-at preferences u9))))
+  ))
+
 ;; Ad viewing and compensation
 (define-public (record-ad-view (campaign-id uint))
   (let (
@@ -155,7 +170,7 @@
     (asserts! (get active campaign) ERR_CAMPAIGN_NOT_FOUND)
     (asserts! (is-none (map-get? ad-views view-key)) ERR_ALREADY_VIEWED)
     (asserts! (>= (get budget campaign) (get cost-per-view campaign)) ERR_INSUFFICIENT_FUNDS)
-    (asserts! (contains (get category campaign) (get preferences user-profile)) ERR_INVALID_PARAMS)
+    (asserts! (check-category-match (get category campaign) (get preferences user-profile)) ERR_INVALID_PARAMS)
     
     ;; Calculate compensation
     (let (
@@ -213,19 +228,32 @@
       
       (ok amount))))
 
-;; Helper functions
+;; Helper function to check if a category is valid
+(define-private (is-valid-category (category uint))
+  (is-some (map-get? categories category)))
+
+;; Helper function to count valid categories in a list
+(define-private (count-valid-categories (preferences (list 10 uint)))
+  (+ 
+    (if (and (> (len preferences) u0) (is-valid-category (unwrap-panic (element-at preferences u0)))) u1 u0)
+    (if (and (> (len preferences) u1) (is-valid-category (unwrap-panic (element-at preferences u1)))) u1 u0)
+    (if (and (> (len preferences) u2) (is-valid-category (unwrap-panic (element-at preferences u2)))) u1 u0)
+    (if (and (> (len preferences) u3) (is-valid-category (unwrap-panic (element-at preferences u3)))) u1 u0)
+    (if (and (> (len preferences) u4) (is-valid-category (unwrap-panic (element-at preferences u4)))) u1 u0)
+    (if (and (> (len preferences) u5) (is-valid-category (unwrap-panic (element-at preferences u5)))) u1 u0)
+    (if (and (> (len preferences) u6) (is-valid-category (unwrap-panic (element-at preferences u6)))) u1 u0)
+    (if (and (> (len preferences) u7) (is-valid-category (unwrap-panic (element-at preferences u7)))) u1 u0)
+    (if (and (> (len preferences) u8) (is-valid-category (unwrap-panic (element-at preferences u8)))) u1 u0)
+    (if (and (> (len preferences) u9) (is-valid-category (unwrap-panic (element-at preferences u9)))) u1 u0)
+  ))
+
+;; Validate user preferences
 (define-private (validate-preferences (preferences (list 10 uint)))
   (let ((prefs-len (len preferences)))
     (and 
       (> prefs-len u0)
       (<= prefs-len u10)
-      (is-eq prefs-len (len (filter is-valid-category preferences))))))
-
-(define-private (is-valid-category (category uint))
-  (is-some (map-get? categories category)))
-
-(define-private (contains (item uint) (lst (list 10 uint)))
-  (default-to false (some (lambda (x) (is-eq x item)) lst)))
+      (is-eq prefs-len (count-valid-categories preferences)))))
 
 ;; Read-only functions
 (define-read-only (get-user-profile (user principal))
